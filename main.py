@@ -1,8 +1,6 @@
 # This code will be used for producing the difference in angle of average for Force/Velocity Direction Error.
 # It will also be used to show the variability in the directed angle. Look for ways to describe the variability of the signal. Frequency analysis?
 
-# TODO: Generate code that can take the data, calculate the angle between the vector of directed force/velocity and the
-#  vector of the target for each time sample.
 # TODO: Determine if this should be done for the entire sequence, or if this should be done for only after the reaction
 #  time (that code can be fed in to demonstrate what is happening)
 # TODO: Generate function that calculates average error in this applied force/velocity.
@@ -14,8 +12,6 @@
 
 # TODO: May want to insert the code for the calculation of the angle difference for both force and velocity into the
 #  data cleaning code, since this can be treated as an additional signal.
-# TODO: In order for the angle of error code to work for all targets, we need to specify the vector for when the person
-#  is reaching from an outer target to the home target in the centre of the screen.
 
 import os
 import numpy as np
