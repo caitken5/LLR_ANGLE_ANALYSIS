@@ -1,5 +1,6 @@
 import sys
 import numpy as np
+from scipy import signal
 
 data_header = ['Time', 'Des_X_Pos', 'Des_Y_Pos', 'X_Pos', 'Y_Pos', 'OptoForce_X', 'OptoForce_Y', 'OptoForce_Z',
                'OptoForce_Z_Torque', 'Theta_1', 'Theta_2', 'Fxy_Mag', 'Fxy_Angle', 'CorrForce_X', 'CorrForce_Y',
@@ -40,15 +41,21 @@ def get_task_number(file_name):
     return task
 
 
-def reaction_time(dist_from_target):
+def reaction_time_index(dist_from_target):
     # This function calculates the reaction time of the user in this particular reach. It returns the row number that
     # corresponds to when the reaction occurs.
-    react_time = None
+    react_time_index = None
     for j in range(10, dist_from_target.shape[0]):
         row_start = dist_from_target[j] - dist_from_target[j-10]
         if row_start <= -1:
-            react_time = j
+            react_time_index = j
             break
+    return react_time_index
+
+
+def get_reaction_time(data, index):
+    # Using the calculated index in get_reaction_time_index, calculate the amount of time from start to when reaction occurs.
+    react_time = data[index] - data[0]
     return react_time
 
 
@@ -79,3 +86,29 @@ def angle_between_points(point_1, point_2):
     return theta
 
 
+def butterworth_filter(data, cutoff, fs):
+    # 2nd order 50 Hz Butterworth filter applied along the time series dimension of as many columns are passed to it.
+    # Will likely just be used to filter the velocity data, since a second order 20Hz Butterworth filter has already
+    # been applied to the force data.
+    sos = signal.butter(2, cutoff, 'lowpass', fs=fs, output='sos')
+    # Frequency was selected to smooth the signal so there are no accidental spikes in data when a person has actually
+    # stopped, but not so that it changes the shape of the signal, which if too low makes it difficult to
+    # identify stopping regions.
+    # Since fs is specified, set the cutoff filter to 20 Hz.
+    filtered_data = signal.sosfiltfilt(sos, data, axis=0)
+    return filtered_data
+
+
+def get_vel_min(vel):
+    # This function takes in the velocity data and calculates whether the first minimum in the data has been achieved.
+    # Argrelmin requires a strict minimum, ie. increasing on both sides. Since find_peaks can detect lows that are not
+    # strict minimums, I will use that.
+    my_min = None  # Base set so I can deal with occasions that don't fit what I expect.
+    first_min = []
+    # Multiply my series by -1 to find the maxes (which are actually the minima!)
+    neg_vel = -1*vel
+    my_min_series = signal.find_peaks(neg_vel)[0]  # Use 0 to extract the array.
+    # TODO: Account for when my_min_series has no minimums.
+    if my_min_series.size != 0:
+        my_min = my_min_series[0]
+    return my_min
